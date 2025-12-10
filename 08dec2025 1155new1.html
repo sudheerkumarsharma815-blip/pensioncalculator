@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Defense Pension Calculator Design by Sudheer Kumar Sharma</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(to bottom right, #6a11cb, #2575fc);
+    color: #333;
+    padding-bottom: 20px;
+}
+
+h1 {
+    text-align: center;
+    color: white;
+    font-size: 2rem;
+    padding: 20px 10px;
+}
+
+.calculator {
+    width: 95%;
+    max-width: 650px;
+    margin: 15px auto;
+    background: #fff;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+}
+
+.top-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.top-buttons button {
+    flex: 1 1 30%;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+}
+
+.printBtn { background: #17a2b8; }
+.excelBtn { background: #28a745; }
+.pdfBtn { background: #dc3545; }
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+}
+
+.form-row label {
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #1e3c72;
+}
+
+.form-row input, .form-row select {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #1e3c72;
+    font-size: 1rem;
+    background: #f0f4f8;
+    width: 100%;
+}
+
+.calculate-btn {
+    width: 100%;
+    padding: 14px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: white;
+    cursor: pointer;
+}
+
+.calculate-btn:hover { opacity: 0.9; }
+
+.result-box {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 10px;
+    background: #f5f7fa;
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+}
+
+.grand-total { background: #ff4757; color: white; font-size: 1.05rem; }
+
+h3 {
+    text-align: center;
+    color: #1e3c72;
+    margin-top: 20px;
+    font-size: 1.2rem;
+}
+
+/* Media Queries */
+@media(min-width: 480px){
+    .form-row { 
+        flex-direction: row; 
+        justify-content: space-between; 
+        align-items: center; 
+    }
+    .form-row label { flex: 0 0 45%; margin-bottom: 0; }
+    .form-row input, .form-row select { flex: 0 0 50%; }
+}
+
+@media(max-width: 479px){
+    .top-buttons button { flex: 1 1 100%; } /* Stack buttons */
+    .form-row { flex-direction: column; }
+    .form-row label { margin-bottom: 5px; }
+    .form-row input, .form-row select { flex: 1 1 100%; width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<h1>🛡️ Defense Pension Calculator with AGIF Designed by Sudheer Kumar Sharma 🛡️</h1>
+
+<div class="calculator">
+    <div class="top-buttons">
+        <button class="printBtn" onclick="window.print()">🖨 Print</button>
+        <button class="excelBtn" onclick="exportExcel()">📗 Excel</button>
+        <button class="pdfBtn" onclick="exportPDF()">📄 PDF</button>
+    </div>
+
+    <!-- Input Fields -->
+    <div class="form-row"><label>Basic Salary:</label><input id="basic" type="number" value="64000"></div>
+    <div class="form-row"><label>MS Pay:</label><input id="msPay" type="number" value="5200"></div>
+    <div class="form-row"><label>GP X Pay:</label><input id="gpXPay" type="number" value="6200"></div>
+    <div class="form-row"><label>Class Pay:</label><input id="classPay" type="number" value="0"></div>
+    <div class="form-row"><label>Service in Years:</label><input id="service" type="number" value="27"></div>
+    <div class="form-row"><label>DA %:</label><input id="daPercent" type="number" value="58"></div>
+    <div class="form-row"><label>Age Next Birthday:</label><input id="age" type="number" value="46"></div>
+    <div class="form-row"><label>Leave Encashment Days:</label><input id="leaveDays" type="number" value="300"></div>
+    <div class="form-row"><label>Date of Enrollment:</label><input id="enrollment" type="month" value="1990-01"></div>
+    <div class="form-row"><label>Retirement Month & Year:</label><input id="retirement" type="month" value="2026-05"></div>
+    <div class="form-row"><label>AFPP Fund:</label><input id="AFPP" type="number" value="100000"></div>
+    <div class="form-row"><label>Disability %:</label><input id="disabilityPercent" type="number" value="0"></div>
+    <div class="form-row"><label>Disability Attributable:</label>
+        <select id="disabilityAttributable"><option value="yes">Yes</option><option value="no">No</option></select>
+    </div>
+    <div class="form-row"><label>Family Pension Type:</label>
+        <select id="familyPensionType"><option value="normal">Normal (30%)</option><option value="enhanced">Enhanced (50%)</option></select>
+    </div>
+
+    <h3>AFPP Fund Return Calculator</h3>
+    <div class="form-row"><label>Current AFPP Balance:</label><input id="afppCurrent" type="number" value="100000"></div>
+    <div class="form-row"><label>Monthly Subscription:</label><input id="afppMonthly" type="number" value="2000"></div>
+    <div class="form-row"><label>Interest Rate %:</label><input id="afppRate" type="number" value="7"></div>
+    <div class="form-row"><label>Until Month & Year:</label><input id="afppUntil" type="month" value="2026-05"></div>
+
+    <button class="calculate-btn" style="background:#007bff;" onclick="calculateAFPP()">Calculate AFPP Return</button>
+    <div id="afppResults"></div>
+
+    <button class="calculate-btn" style="background:#28a745;" onclick="calculatePension()">Calculate Pension</button>
+    <div id="resultsContainer"></div>
+</div>
+
+<script>
+// Commutation & AGIF Tables
+const commutationTable={20:9.188,21:9.187,22:9.186,23:9.185,24:9.184,25:9.183,26:9.182,27:9.18,28:9.178,29:9.176,
+30:9.173,31:9.169,32:9.164,33:9.159,34:9.152,35:9.145,36:9.136,37:9.126,38:9.116,39:9.103,40:9.09,41:9.075,
+42:9.059,43:9.04,44:9.019,45:8.996,46:8.971,47:8.943,48:8.913,49:8.881,50:8.846,51:8.808,52:8.768,53:8.724,
+54:8.678,55:8.627,56:8.572,57:8.512,58:8.446,59:8.371,60:8.287,61:8.194,62:8.093,63:7.982,64:7.862,65:7.731,
+66:7.591,67:7.431,68:7.262,69:7.083,70:6.897,71:6.703,72:6.502,73:6.296,74:6.085,75:5.872,76:5.657,77:5.443,
+78:5.229,79:5.018,80:4.812,81:4.611};
+
+const agifTable=[{from:"1900-01",to:"2001-02",amount:150},{from:"2001-03",to:"2002-12",amount:250},
+{from:"2003-01",to:"2004-12",amount:500},{from:"2005-01",to:"2008-12",amount:750},{from:"2009-01",to:"2011-03",amount:1090},
+{from:"2011-04",to:"2013-06",amount:2000},{from:"2013-07",to:"2022-03",amount:2500},{from:"2022-04",to:"2025-03",amount:5000},
+{from:"2025-04",to:"2100-12",amount:7500}];
+
+function monthsDiff(d1,d2){return (d2.getFullYear()-d1.getFullYear())*12+(d2.getMonth()-d1.getMonth())+1;}
+function calculateAGIF(enroll, retire){
+    let total=0;
+    const e=new Date(enroll+"-01"); const r=new Date(retire+"-01");
+    agifTable.forEach(p=>{
+        const start=new Date(p.from+"-01"); const end=new Date(p.to+"-01");
+        const S=e>start?e:start; const E=r<end?r:end;
+        if(E>=S) total+=monthsDiff(S,E)*p.amount;
+    });
+    return total + total*0.7339;
+}
+
+// AFPP
+function calculateAFPP(){
+    const c=+document.getElementById('afppCurrent').value, m=+document.getElementById('afppMonthly').value,
+        rate=+document.getElementById('afppRate').value/100, until=new Date(document.getElementById('afppUntil').value+"-01"),
+        today=new Date(), months=monthsDiff(today, until), monthlyRate=rate/12;
+    let finalAmount=c*Math.pow(1+monthlyRate,months) + m*((Math.pow(1+monthlyRate,months)-1)/monthlyRate);
+    let totalContribution=c+m*months;
+    let interestEarned=finalAmount-totalContribution;
+    document.getElementById('AFPP').value=finalAmount.toFixed(0);
+    document.getElementById('afppResults').innerHTML=`
+    <div class="result-box"><span>📦 Total Contribution:</span><span>₹ ${totalContribution.toFixed(0)}</span></div>
+    <div class="result-box"><span>💹 Interest Earned:</span><span>₹ ${interestEarned.toFixed(0)}</span></div>
+    <div class="result-box grand-total" style="background:#007bff;"><span>AFPP Final Value:</span><span>₹ ${finalAmount.toFixed(0)}</span></div>`;
+}
+
+// Pension
+function calculatePension(){
+    const basic=+document.getElementById('basic').value, msPay=+document.getElementById('msPay').value,
+        gpXPay=+document.getElementById('gpXPay').value, classPay=+document.getElementById('classPay').value,
+        service=+document.getElementById('service').value, DApercent=+document.getElementById('daPercent').value,
+        age=+document.getElementById('age').value, leaveDays=+document.getElementById('leaveDays').value,
+        enrollment=document.getElementById('enrollment').value, retirement=document.getElementById('retirement').value,
+        disabilityPercent=+document.getElementById('disabilityPercent').value,
+        disabilityAttributable=document.getElementById('disabilityAttributable').value,
+        familyType=document.getElementById('familyPensionType').value;
+
+    const totalPay=basic+msPay+gpXPay+classPay, daAmount=totalPay*(DApercent/100), newAmount=basic*(DApercent/100),
+        pensionUncommuted=0.5*totalPay+0.5*totalPay*(DApercent/100),
+        pensionAfterCommutation=0.25*totalPay+0.5*totalPay*(DApercent/100),
+        leaveEncashment=(basic+newAmount)*(leaveDays/30);
+
+    let gratuityService=service+5; if(gratuityService>33) gratuityService=33;
+    const gratuity=((totalPay+daAmount)*.50)*gratuityService;
+    const commFactor=commutationTable[age]||0, commutation=0.25*totalPay*12*commFactor,
+        agif=Math.round(calculateAGIF(enrollment,retirement)), afpp=+document.getElementById('AFPP').value;
+
+    let familyPension=familyType==="normal"?0.3*totalPay+0.3*totalPay*(DApercent/100):0.5*totalPay+0.5*totalPay*(DApercent/100),
+        disabilityPension=(disabilityPercent>0 && disabilityAttributable==="yes")?0.3*totalPay*(disabilityPercent/100):0;
+
+    let total=leaveEncashment+gratuity+commutation+agif+afpp;
+    if(isNaN(total)) total=0;
+
+    document.getElementById("resultsContainer").innerHTML=`
+<div class="result-box"><span>💵 Leave Encashment:</span><span>₹ ${leaveEncashment.toFixed(0)}</span></div>
+<div class="result-box"><span>💰 Pension (No Commutation):</span><span>₹ ${pensionUncommuted.toFixed(0)}</span></div>
+<div class="result-box"><span>💵 Pension (After Commutation):</span><span>₹ ${pensionAfterCommutation.toFixed(0)}</span></div>
+<div class="result-box"><span>📉 Commutation Value:</span><span>₹ ${commutation.toFixed(0)}</span></div>
+<div class="result-box"><span>🏦 Gratuity Amount:</span><span>₹ ${gratuity.toFixed(0)}</span></div>
+<div class="result-box"><span>💎 AGIF:</span><span>₹ ${agif.toFixed(0)}</span></div>
+<div class="result-box"><span>🏛️ AFPP Fund:</span><span>₹ ${afpp.toFixed(0)}</span></div>
+<div class="result-box"><span>👪 Family Pension:</span><span>₹ ${familyPension.toFixed(0)}</span></div>
+<div class="result-box"><span>♿ Disability Pension:</span><span>₹ ${disabilityPension.toFixed(0)}</span></div>
+<div class="result-box grand-total"><span>Grand Total:</span><span>₹ ${total.toFixed(0)}</span></div>`;
+}
+
+// Excel Export
+function exportExcel(){
+    let results=document.querySelectorAll(".result-box"), rows=[["Description","Amount"]];
+    results.forEach(r=>{const parts=r.innerText.split("₹"); rows.push([parts[0].trim(),parts[1].trim()]);});
+    let ws=XLSX.utils.aoa_to_sheet(rows), wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pension"); XLSX.writeFile(wb, "Pension_Report.xlsx");
+}
+
+// PDF Export
+function exportPDF(){
+    const w=window.open("","_blank");
+    w.document.write("<pre>"+document.getElementById("resultsContainer").innerText+"</pre>");
+    w.print();
+}
+</script>
+
+</body>
+</html>
